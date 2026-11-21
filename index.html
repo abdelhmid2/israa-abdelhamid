@@ -319,9 +319,6 @@ footer .dev{font-weight:700; color:var(--ink)}
 @keyframes burst{0%{transform:translateY(0) scale(.6); opacity:1}100%{transform:translateY(-46vh) scale(1.4); opacity:0}}
 @media (prefers-reduced-motion: reduce){.burst-heart{animation:none; opacity:0}}
 </style>
-  <meta property="og:image" content="https://bolt.new/static/og_default.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
 </head>
 <body>
 <div id="hearts" aria-hidden="true"></div>
@@ -877,7 +874,12 @@ footer .dev{font-weight:700; color:var(--ink)}
     });
   }
 
-  document.querySelectorAll(".player").forEach(function(box){
+  /* real total durations of the three songs, in page order, in seconds:
+     معايا 3:55، أنا من غيرك 3:41، تعالى أدلعك 3:33 — used as a fallback
+     whenever the browser has not exposed audio.duration yet, so the
+     total-duration label never stays stuck on 0:00 */
+  var KNOWN_DURS = [235, 221, 213];
+  document.querySelectorAll(".player").forEach(function(box, idx){
     var audio = box.querySelector("audio");
     var btn = box.querySelector(".play-btn");
     var seek = box.querySelector(".seek");
@@ -887,8 +889,16 @@ footer .dev{font-weight:700; color:var(--ink)}
     var note = card ? card.querySelector(".media-note") : null;
     if (!audio || !btn) return;
     allMedia.push(audio);
-    audio.addEventListener("loadedmetadata", function(){ dur.textContent = fmtClock(audio.duration); });
+    function showDur(){
+      if (isFinite(audio.duration) && audio.duration > 0) dur.textContent = fmtClock(audio.duration);
+      else if (KNOWN_DURS[idx]) dur.textContent = fmtClock(KNOWN_DURS[idx]);
+    }
+    showDur();
+    audio.addEventListener("loadedmetadata", showDur);
+    audio.addEventListener("durationchange", showDur);
+    audio.addEventListener("canplay", showDur);
     audio.addEventListener("timeupdate", function(){
+      showDur();
       if (isFinite(audio.duration) && audio.duration > 0) seek.value = (audio.currentTime / audio.duration) * 100;
       cur.textContent = fmtClock(audio.currentTime);
     });
