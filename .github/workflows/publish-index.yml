@@ -1,0 +1,24 @@
+name: Publish index.html
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download release asset as index.html
+        run: |
+          curl -L -o index.html "https://github.com/abdelhmid2/israa-abdelhamid/releases/download/v1/sr-w-bdh.html"
+          ls -lh index.html
+          test -s index.html
+      - name: Commit index.html
+        run: |
+          git config user.name "abdelhmid2"
+          git config user.email "abdelhmid2@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add index.html" || echo "nothing to commit"
+          git push
